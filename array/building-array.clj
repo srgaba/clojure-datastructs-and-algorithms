@@ -1,49 +1,64 @@
+(ns run.core
+  (:use [clojure.pprint]))
+
 (defn build-array [max-length]
   (atom {:length 0 :max-length max-length}))
 
+(defn is-full?
+  [a]
+  (= (:length @a) (:max-length @a)))
+
 (defn push-to [a value]
-  (if-not (= (:length @a) (:max-length @a)) 
+  (if-not (is-full? a)
     (let [len (:length @a)]
-      (reset! a (assoc @a len value :length (+ len 1)))) 
-    (println "full")))
+      (swap! a assoc len value :length (+ len 1)))
+    (throw (ex-info "array is full" {:value value}))))
 
 
-(defn re-index-to [a start]
-  (let [end (+ (:length @a) 1)]
-    (doseq [i (range start end)]
-      (reset! a (assoc @a (- i 1) (get @a i))))
-    (reset! a (dissoc @a (- end 1)))))
+(defn came-to-an-end [current end]
+  (> current end))
 
+(defn re-index [a current end]
+  (if-not (came-to-an-end current end)
+    (let [new-a (assoc a (- current 1) (get a current))]
+      (recur new-a (inc current) end))
+    (dissoc a end)))
 
 (defn rm [a key]
-  (let [new-len (- (:length @a) 1)] 
-    (-> @a
-      (dissoc key)
-      (assoc :length new-len))))
+   (-> a
+        (dissoc key)
+        (update :length dec)))
+
+(defn value-is-equal-to-value-in-array [kv find]
+  (= (val kv) find))
+
+(defn rm-value! [a value]
+  (let [derefed-a @a
+        length (:length derefed-a)]
+    (doseq [kv derefed-a]
+      (when (value-is-equal-to-value-in-array kv value)
+        (as-> derefed-a drfda
+            (rm drfda (kv 0))
+              (re-index drfda (+ (kv 0) 1) (- length 1))
+            (reset! a drfda))))))
 
 (defn rm-last-value [a]
   (let [last-index (- (:length @a) 1)]
     (reset! a (rm a last-index))))
 
-
-(defn rm-value [a value]
-  (doseq [kv @a]
-      (when (= (val kv) value)
-        (reset! a (rm a (kv 0)))
-        (re-index-to a (+ (kv 0) 1)))))
-
 (def a (build-array 5))
 
-(push-to a 1)
-(push-to a 2)
-(push-to a 3)
-(push-to a 4)
-(push-to a 5)
+(defn simulate []
+  (let [a (build-array 5)]
+    (pprint a)
+    (push-to a 1)
+    (push-to a 2)
+    (push-to a 3)
+    (push-to a 4)
+    (push-to a 5)
+    (rm-value! a 2)
+    (rm-value! a 3)
+    (rm-value! a 1)
+    (pprint a)))
 
-(rm-value a 3)
-(rm-value a 2)
-
-(rm-last-value a)
-
-(push-to a 7)
-
+(simulate)
