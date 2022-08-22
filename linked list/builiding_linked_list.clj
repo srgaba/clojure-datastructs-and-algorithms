@@ -53,7 +53,6 @@
   [ll previous-node]
   (assoc ll :tail previous-node))
 
-
 (defn disconnect-node-to-another
   [node]
   (assoc node :next nil))
@@ -67,6 +66,22 @@
     (swap! previous-node-from-tail disconnect-node-to-another)
     ll))
 
+
+
+(defn get-node-base-value
+  [node value]
+  (if node
+    (let [dnode @node]
+      (if (= (get dnode :data) value)
+        node
+        (recur (get dnode :next) value)))
+    nil))
+
+(defn get-node
+  [ll value]
+  (let [head-node (get @ll :head)]
+    (get-node-base-value head-node value)))
+
 (def ll (atom (build-linked-list 1)))
 
 (append! ll 2)
@@ -78,3 +93,5 @@
 
 (pprint ll)
 ;(rm-head ll)
+
+(println (get-node ll 0))
