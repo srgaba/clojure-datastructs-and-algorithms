@@ -24,8 +24,8 @@
   [ll value]
   (let [dll @ll
         node (atom (build-node value))
-        current-tail (get dll :tail)]
-    (swap! current-tail update-current-tail-to-point-to-the-new-node node)
+        current-tail-node (get dll :tail)]
+    (swap! current-tail-node update-current-tail-to-point-to-the-new-node node)
     (swap! ll update-tail node)
     ll))
 
